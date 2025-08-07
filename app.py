@@ -2,35 +2,40 @@ import streamlit as st
 import pickle
 import re
 import nltk
-import fitz  # PyMuPDF for PDF text extraction
+import os
+import gdown
+import fitz  # PyMuPDF
 
-# Download NLTK resources (only needed once)
+# Download necessary NLTK data
 nltk.download('stopwords')
 nltk.download('punkt')
 
+# File IDs for Google Drive
+clf_drive_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
+tfidf_drive_id = "YOUR_TFIDF_PKL_FILE_ID"  # ← Replace with tfidf.pkl file ID
 
-# Load pre-trained model and vectorizer
-import os
-import gdown
+# Local paths
+clf_path = "clf.pkl"
+tfidf_path = "tfidf.pkl"
 
-# Define file paths and Google Drive file IDs
-clf_file_path = "clf.pkl"
-tfidf_file_path = "tfidf.pkl"
+# Download clf.pkl if it's not already present
+if not os.path.exists(clf_path):
+    gdown.download(f"https://drive.google.com/uc?id={clf_drive_id}", clf_path, quiet=False)
 
-clf_drive_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"  # Replace with actual clf.pkl ID
-tfidf_drive_id = "1abcdefghijklmno...xyz"           # Replace with actual tfidf.pkl ID
+# Download tfidf.pkl if it's not already present
+if not os.path.exists(tfidf_path):
+    gdown.download(f"https://drive.google.com/uc?id={tfidf_drive_id}", tfidf_path, quiet=False)
 
-# Download clf.pkl if not exists
-if not os.path.exists(clf_file_path):
-    clf_url = f"https://drive.google.com/uc?id={clf_drive_id}"
-    gdown.download(clf_url, clf_file_path, quiet=False)
+# Load the model and vectorizer using pickle
+with open(clf_path, 'rb') as f:
+    clf = pickle.load(f)
 
-# Download tfidf.pkl if not exists
-if not os.path.exists(tfidf_file_path):
-    tfidf_url = f"https://drive.google.com/uc?id={tfidf_drive_id}"
-    gdown.download(tfidf_url, tfidf_file_path, quiet=False)
+with open(tfidf_path, 'rb') as f:
+    tfidf = pickle.load(f)
 
-# Mapping IDs to category names
+# Your existing text cleaning and classification logic follows…
+
+# Label mapping
 id_to_label = {
     6: 'Data Science',
     12: 'HR',
@@ -59,63 +64,51 @@ id_to_label = {
     23: 'Testing'
 }
 
-
-# Text cleaning function
-def clean_res(text):
+# Cleaning function
+def clean_text(text):
     text = re.sub(r"http\S+", " ", text)
     text = re.sub(r"@\S+", " ", text)
     text = re.sub(r"#\S+", " ", text)
-    text = re.sub(r"[%s]" % re.escape("""!"#$%&()*+,-./:;<=>?@[\]^_`{|}~"""), " ", text)
-    text = re.sub(r"[^\x00-\x7f]", " ", text)
+    text = re.sub(r"[^\w\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
-    text = re.sub(r"\b(RT|cc)\b", " ", text, flags=re.IGNORECASE)
     return text.strip()
 
-
-# PDF text extractor
-def extract_text_from_pdf(uploaded_file):
+# PDF extractor
+def extract_text_from_pdf(file):
     try:
-        with fitz.open(stream=uploaded_file.read(), filetype="pdf") as doc:
-            return " ".join([page.get_text() for page in doc])
+        with fitz.open(stream=file.read(), filetype="pdf") as doc:
+            return " ".join(page.get_text() for page in doc)
     except Exception as e:
-        st.error(f"Failed to extract PDF text: {e}")
+        st.error(f"Error reading PDF: {e}")
         return ""
 
-
-# Main app
+# Streamlit app
 def main():
-    st.title("📄 Resume Screening App")
-    st.write("Upload a resume (PDF or TXT) to classify its category.")
+    st.title("📄 Resume Classification App")
 
-    uploaded_file = st.file_uploader("Upload Resume", type=["pdf", "txt"])
+    uploaded_file = st.file_uploader("Upload a resume (PDF or TXT)", type=["pdf", "txt"])
 
-    if uploaded_file is not None:
+    if uploaded_file:
+        # Extract content
         if uploaded_file.type == "application/pdf":
-            resume_text = extract_text_from_pdf(uploaded_file)
+            text = extract_text_from_pdf(uploaded_file)
         else:
-            try:
-                resume_bytes = uploaded_file.read()
-                resume_text = resume_bytes.decode('utf-8')
-            except:
-                resume_text = resume_bytes.decode('latin-1')
+            text = uploaded_file.read().decode("utf-8", errors="ignore")
 
-        if not resume_text.strip():
-            st.warning("Couldn't extract any text from the uploaded file.")
+        if not text.strip():
+            st.warning("No content found in the uploaded file.")
             return
 
-        # Clean and transform resume text
-        cleaned_text = clean_res(resume_text)
-        vectorized_text = tfidf.transform([cleaned_text])
-        prediction_id = clf.predict(vectorized_text)[0]
+        # Clean, transform, predict
+        cleaned = clean_text(text)
+        vector = tfidf.transform([cleaned])
+        prediction = clf.predict(vector)[0]
 
-        category = id_to_label.get(prediction_id, "Unknown")
+        category = id_to_label.get(prediction, "Unknown")
+        st.success(f"Predicted Category: **{category}**")
 
-        st.success(f"🎯 **Predicted Category:** {category}")
-
-        if st.checkbox("Show extracted resume text"):
-            st.subheader("📄 Extracted Resume Content")
-            st.text_area("Resume Text", resume_text, height=300)
-
+        if st.checkbox("Show Resume Text"):
+            st.text_area("Extracted Resume Text", text, height=300)
 
 if __name__ == "__main__":
     main()
