@@ -1,26 +1,35 @@
 import os
 import pickle
 import gdown
+import streamlit as st
+
+
+# Correct Google Drive file IDs (from the links you shared)
+clf_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
+tfidf_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"
 
 clf_path = "clf.pkl"
 tfidf_path = "tfidf.pkl"
 
-clf_drive_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
-tfidf_drive_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"
+# Function to download only if not present
+def download_if_needed(file_id, output_path):
+    if not os.path.exists(output_path):
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, output_path, quiet=False)
+    else:
+        print(f"{output_path} already exists, skipping download.")
 
-# Use gdown with proper URL format
-if not os.path.exists(clf_path):
-    gdown.download(f"https://drive.google.com/uc?id={clf_drive_id}", clf_path, quiet=False)
+# Download the files
+download_if_needed(clf_id, clf_path)
+download_if_needed(tfidf_id, tfidf_path)
 
-if not os.path.exists(tfidf_path):
-    gdown.download(f"https://drive.google.com/uc?id={tfidf_drive_id}", tfidf_path, quiet=False)
-
-# Load the files
-with open(clf_path, 'rb') as f:
+# Load models using pickle (only if they are valid!)
+with open(clf_path, "rb") as f:
     clf = pickle.load(f)
 
-with open(tfidf_path, 'rb') as f:
+with open(tfidf_path, "rb") as f:
     tfidf = pickle.load(f)
+
 
 
 # Your existing text cleaning and classification logic follows…
