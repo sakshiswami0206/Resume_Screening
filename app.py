@@ -1,37 +1,27 @@
-import streamlit as st
-import pickle
-import re
-import nltk
 import os
+import pickle
 import gdown
-import fitz  # PyMuPDF
 
-# Download necessary NLTK data
-nltk.download('stopwords')
-nltk.download('punkt')
-
-# File IDs for Google Drive
-clf_drive_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
-tfidf_drive_id = "YOUR_TFIDF_PKL_FILE_ID"  # ← Replace with tfidf.pkl file ID
-
-# Local paths
 clf_path = "clf.pkl"
 tfidf_path = "tfidf.pkl"
 
-# Download clf.pkl if it's not already present
+clf_drive_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
+tfidf_drive_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"
+
+# Use gdown with proper URL format
 if not os.path.exists(clf_path):
     gdown.download(f"https://drive.google.com/uc?id={clf_drive_id}", clf_path, quiet=False)
 
-# Download tfidf.pkl if it's not already present
 if not os.path.exists(tfidf_path):
     gdown.download(f"https://drive.google.com/uc?id={tfidf_drive_id}", tfidf_path, quiet=False)
 
-# Load the model and vectorizer using pickle
+# Load the files
 with open(clf_path, 'rb') as f:
     clf = pickle.load(f)
 
 with open(tfidf_path, 'rb') as f:
     tfidf = pickle.load(f)
+
 
 # Your existing text cleaning and classification logic follows…
 
