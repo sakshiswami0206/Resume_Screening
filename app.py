@@ -1,16 +1,17 @@
 import streamlit as st
-import pickle
 import re
 import nltk
+import joblib
 import fitz  # PyMuPDF for PDF text extraction
 
 # Download NLTK resources (only needed once)
 nltk.download('stopwords')
 nltk.download('punkt')
+git add app.py requirements.txt clf.pkl tfidf.pkl .gitignore
 
 # Load pre-trained model and vectorizer
-clf = pickle.load(open('clf.pkl', 'rb'))
-tfidf = pickle.load(open('tfidf.pkl', 'rb'))
+clf = joblib.load('clf.pkl')
+tfidf = joblib.load('tfidf.pkl')
 
 # Mapping IDs to category names
 id_to_label = {
