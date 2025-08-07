@@ -8,9 +8,27 @@ import fitz  # PyMuPDF for PDF text extraction
 nltk.download('stopwords')
 nltk.download('punkt')
 
+
 # Load pre-trained model and vectorizer
-clf = pickle.load(open('clf.pkl', 'rb'))
-tfidf = pickle.load(open('tfidf.pkl', 'rb'))
+import os
+import gdown
+
+# Define file paths and Google Drive file IDs
+clf_file_path = "clf.pkl"
+tfidf_file_path = "tfidf.pkl"
+
+clf_drive_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"  # Replace with actual clf.pkl ID
+tfidf_drive_id = "1abcdefghijklmno...xyz"           # Replace with actual tfidf.pkl ID
+
+# Download clf.pkl if not exists
+if not os.path.exists(clf_file_path):
+    clf_url = f"https://drive.google.com/uc?id={clf_drive_id}"
+    gdown.download(clf_url, clf_file_path, quiet=False)
+
+# Download tfidf.pkl if not exists
+if not os.path.exists(tfidf_file_path):
+    tfidf_url = f"https://drive.google.com/uc?id={tfidf_drive_id}"
+    gdown.download(tfidf_url, tfidf_file_path, quiet=False)
 
 # Mapping IDs to category names
 id_to_label = {
