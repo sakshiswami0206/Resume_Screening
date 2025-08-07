@@ -7,7 +7,6 @@ import fitz  # PyMuPDF for PDF text extraction
 # Download NLTK resources (only needed once)
 nltk.download('stopwords')
 nltk.download('punkt')
-git add app.py requirements.txt clf.pkl tfidf.pkl .gitignore
 
 # Load pre-trained model and vectorizer
 clf = joblib.load('clf.pkl')
