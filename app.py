@@ -1,49 +1,13 @@
-import os
-import pickle
-import gdown
 import streamlit as st
+import pickle
 import re
-import fitz  # from PyMuPDF
+import fitz  # PyMuPDF
 
-# Google Drive file IDs (ensure these files are publicly accessible)
-clf_id = "1mZblfiK49Wvg2q1VljpryoUbsR75R9XP"
-tfidf_id = "1r2739sjp1l3n28rwEqvlSxfr4aCv2Q-z"
-
-clf_path = "clf.pkl"
-tfidf_path = "tfidf.pkl"
-
-# Function to download from Google Drive only if file doesn't exist
-def download_if_needed(file_id, output_path):
-    if not os.path.exists(output_path):
-        url = f"https://drive.google.com/uc?id={file_id}"
-        st.write(f"Downloading model file from: {url}")
-        gdown.download(url, output_path, quiet=False)
-    else:
-        st.write(f"Found cached model: {output_path}")
-
-# Function to verify if a file is a valid pickle
-def is_valid_pickle(file_path):
-    try:
-        with open(file_path, "rb") as f:
-            pickle.load(f)
-        return True
-    except Exception as e:
-        st.error(f"Error loading model file: {file_path}\n{e}")
-        return False
-
-# Download model files
-download_if_needed(clf_id, clf_path)
-download_if_needed(tfidf_id, tfidf_path)
-
-# Validate pickle files
-if not is_valid_pickle(clf_path) or not is_valid_pickle(tfidf_path):
-    st.stop()
-
-# Load models
-with open(clf_path, "rb") as f:
+# Load the classifier and vectorizer from local files
+with open("clf.pkl", "rb") as f:
     clf = pickle.load(f)
 
-with open(tfidf_path, "rb") as f:
+with open("tfidf.pkl", "rb") as f:
     tfidf = pickle.load(f)
 
 # Label mapping
@@ -58,7 +22,7 @@ id_to_label = {
     3: 'Blockchain', 23: 'Testing'
 }
 
-# Resume text cleaning
+# Clean resume text
 def clean_text(text):
     text = re.sub(r"http\S+", " ", text)
     text = re.sub(r"@\S+", " ", text)
@@ -67,7 +31,7 @@ def clean_text(text):
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
-# PDF text extractor
+# Extract text from PDF
 def extract_text_from_pdf(file):
     try:
         with fitz.open(stream=file.read(), filetype="pdf") as doc:
@@ -76,10 +40,9 @@ def extract_text_from_pdf(file):
         st.error(f"Error reading PDF: {e}")
         return ""
 
-# Main Streamlit app
+# Streamlit app
 def main():
     st.title("📄 Resume Classification App")
-
     uploaded_file = st.file_uploader("Upload a resume (PDF or TXT)", type=["pdf", "txt"])
 
     if uploaded_file:
